@@ -10,6 +10,8 @@ import PROMPT_GEMINI from "./prompt/gemini.txt"
 import PROMPT_CODEX from "./prompt/codex_header.txt"
 import PROMPT_TRINITY from "./prompt/trinity.txt"
 import type { Provider } from "@/provider/provider"
+import { Config } from "../config/config"
+import { MCP } from "../mcp"
 
 export namespace SystemPrompt {
   export function instructions() {
@@ -24,6 +26,27 @@ export namespace SystemPrompt {
     if (model.api.id.includes("claude")) return [PROMPT_ANTHROPIC]
     if (model.api.id.toLowerCase().includes("trinity")) return [PROMPT_TRINITY]
     return [PROMPT_ANTHROPIC_WITHOUT_TODO]
+  }
+
+  export async function mcpServers() {
+    const config = await Config.get()
+    if (config.experimental?.mcp_lazy !== true) return []
+
+    const status = await MCP.status()
+    const servers = Object.entries(status)
+      .filter(([_, s]) => s.status === "connected")
+      .map(([name]) => name)
+
+    if (servers.length === 0) return []
+
+    return [
+      [
+        `<mcp_servers>`,
+        `Available MCP servers: ${servers.join(", ")}`,
+        `Use mcp_search tool to discover and call tools from these servers.`,
+        `</mcp_servers>`,
+      ].join("\n"),
+    ]
   }
 
   export async function environment(model: Provider.Model) {
