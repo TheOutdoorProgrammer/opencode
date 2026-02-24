@@ -19,6 +19,7 @@ import { Schema } from "effect"
 import z from "zod"
 import { ZodOverride } from "@/util/effect-zod"
 import { Plugin } from "../plugin"
+import { MCP } from "../mcp"
 import { Provider } from "@/provider/provider"
 import { ProviderID, type ModelID } from "../provider/schema"
 import { WebSearchTool } from "./websearch"
@@ -46,6 +47,7 @@ import { Bus } from "../bus"
 import { Agent } from "../agent/agent"
 import { Skill } from "../skill"
 import { Permission } from "@/permission"
+import { McpSearchTool } from "./mcp-search"
 
 const log = Log.create({ service: "tool.registry" })
 
@@ -73,6 +75,7 @@ export const layer: Layer.Layer<
   never,
   | Config.Service
   | Plugin.Service
+  | MCP.Service
   | Question.Service
   | Todo.Service
   | Agent.Service
@@ -113,6 +116,7 @@ export const layer: Layer.Layer<
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
+    const mcpsearch = yield* McpSearchTool
     const agent = yield* Agent.Service
 
     const state = yield* InstanceState.make<State>(
@@ -189,7 +193,7 @@ export const layer: Layer.Layer<
           }
         }
 
-        yield* config.get()
+        const cfg = yield* config.get()
         const questionEnabled =
           ["app", "cli", "desktop"].includes(Flag.OPENCODE_CLIENT) || Flag.OPENCODE_ENABLE_QUESTION_TOOL
 
@@ -210,6 +214,7 @@ export const layer: Layer.Layer<
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
+          mcpsearch: Tool.init(mcpsearch),
         })
 
         return {
@@ -231,6 +236,7 @@ export const layer: Layer.Layer<
             tool.patch,
             ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [tool.lsp] : []),
             ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [tool.plan] : []),
+            ...(cfg.experimental?.mcp_lazy === true ? [tool.mcpsearch] : []),
           ],
           task: tool.task,
           read: tool.read,
@@ -335,6 +341,7 @@ export const defaultLayer = Layer.suspend(() =>
   layer.pipe(
     Layer.provide(Config.defaultLayer),
     Layer.provide(Plugin.defaultLayer),
+    Layer.provide(MCP.defaultLayer),
     Layer.provide(Question.defaultLayer),
     Layer.provide(Todo.defaultLayer),
     Layer.provide(Skill.defaultLayer),
