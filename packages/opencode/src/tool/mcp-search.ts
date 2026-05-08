@@ -183,10 +183,16 @@ export const McpSearchTool = Tool.define<typeof parameters, Record<string, unkno
   description: DESCRIPTION,
   parameters,
   async execute(params, ctx) {
-    if (params.operation === "list") return list()
-    if (params.operation === "search") return search(params.query)
-    if (!params.server || !params.tool) throw new Error("Both 'server' and 'tool' parameters are required")
-    if (params.operation === "describe") return describe(params.server, params.tool)
-    return call(params.server, params.tool, params.args ?? {}, ctx)
+    const raw = params as typeof params & Record<string, unknown>
+    const server = raw.server ?? (raw as any).mcp_name ?? (raw as any).server_name
+    const tool = raw.tool ?? (raw as any).tool_name ?? (raw as any).name
+    const args: Record<string, unknown> | undefined = raw.args ?? (typeof (raw as any).arguments === "string" ? JSON.parse((raw as any).arguments) : (raw as any).arguments)
+
+    if (raw.operation === "list") return list()
+    if (raw.operation === "search") return search(raw.query)
+    if (!server || !tool)
+      throw new Error(`Both 'server' and 'tool' parameters are required. Received: server=${JSON.stringify(server)}, tool=${JSON.stringify(tool)}. Use parameter names "server" and "tool", not "mcp_name" or "tool_name".`)
+    if (raw.operation === "describe") return describe(server, tool)
+    return call(server, tool, args ?? {}, ctx)
   },
 })
