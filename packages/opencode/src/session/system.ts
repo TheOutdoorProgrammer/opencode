@@ -105,6 +105,10 @@ export const layer = Layer.effect(
   }),
 )
 
-export const defaultLayer = layer.pipe(Layer.provide(Skill.defaultLayer))
+export const defaultLayer = layer.pipe(
+  Layer.provide(Skill.defaultLayer),
+  Layer.provide(MCP.defaultLayer),
+  Layer.provide(Config.defaultLayer),
+)
 
 export * as SystemPrompt from "./system"
