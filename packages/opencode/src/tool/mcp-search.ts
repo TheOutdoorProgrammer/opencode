@@ -228,14 +228,17 @@ export const McpSearchTool = Tool.define(
       description: DESCRIPTION,
       parameters: Parameters,
       execute(params: McpSearchParams, ctx: Tool.Context): Effect.Effect<Tool.ExecuteResult<Record<string, unknown>>> {
-        const p = params
+        const raw = params as McpSearchParams & Record<string, unknown>
+        const server = raw.server ?? (raw as any).mcp_name ?? (raw as any).server_name
+        const tool = raw.tool ?? (raw as any).tool_name ?? (raw as any).name
+        const args = raw.args ?? (typeof (raw as any).arguments === "string" ? JSON.parse((raw as any).arguments) : (raw as any).arguments)
         return Effect.gen(function* () {
-          if (p.operation === "list") return yield* doList(mcp) as any
-          if (p.operation === "search") return yield* doSearch(mcp, p.query) as any
-          if (!p.server || !p.tool)
-            throw new Error("Both 'server' and 'tool' parameters are required")
-          if (p.operation === "describe") return yield* doDescribe(mcp, p.server, p.tool) as any
-          return yield* doCall(mcp, plugin, p.server, p.tool, p.args ?? {}, ctx) as any
+          if (raw.operation === "list") return yield* doList(mcp) as any
+          if (raw.operation === "search") return yield* doSearch(mcp, raw.query) as any
+          if (!server || !tool)
+            throw new Error(`Both 'server' and 'tool' parameters are required. Received: server=${JSON.stringify(server)}, tool=${JSON.stringify(tool)}. Use parameter names "server" and "tool", not "mcp_name" or "tool_name".`)
+          if (raw.operation === "describe") return yield* doDescribe(mcp, server, tool) as any
+          return yield* doCall(mcp, plugin, server, tool, args ?? {}, ctx) as any
         }) as any
       },
     }
