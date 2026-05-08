@@ -1,4 +1,3 @@
-import z from "zod"
 import { Effect, Schema } from "effect"
 import { Tool } from "./tool"
 import { MCP } from "../mcp"
@@ -6,13 +5,17 @@ import { Plugin } from "../plugin"
 import { processMcpResult } from "./mcp-result"
 import DESCRIPTION from "./mcp-search.txt"
 
-type McpSearchParams = {
-  operation: "list" | "search" | "describe" | "call"
-  query?: string
-  server?: string
-  tool?: string
-  args?: Record<string, unknown>
-}
+const Parameters = Schema.Struct({
+  operation: Schema.Literals(["list", "search", "describe", "call"]).annotate({ description: "Operation to perform" }),
+  query: Schema.optional(Schema.String).annotate({ description: "Search query (for 'search' operation)" }),
+  server: Schema.optional(Schema.String).annotate({ description: "MCP server name (required for 'describe' and 'call')" }),
+  tool: Schema.optional(Schema.String).annotate({ description: "Tool name on that server (required for 'describe' and 'call')" }),
+  args: Schema.optional(Schema.Record(Schema.String, Schema.Unknown)).annotate({
+    description: "Tool arguments as a JSON object (for 'call' operation)",
+  }),
+})
+
+type McpSearchParams = Schema.Schema.Type<typeof Parameters>
 
 function sanitize(name: string) {
   return name.replace(/[^a-zA-Z0-9_-]/g, "_")
@@ -215,7 +218,7 @@ function doCall(
   })
 }
 
-export const McpSearchTool = Tool.define<Schema.Unknown, Record<string, unknown>, MCP.Service | Plugin.Service>(
+export const McpSearchTool = Tool.define(
   "mcp_search",
   Effect.gen(function* () {
     const mcp = yield* MCP.Service
@@ -223,9 +226,9 @@ export const McpSearchTool = Tool.define<Schema.Unknown, Record<string, unknown>
 
     return {
       description: DESCRIPTION,
-      parameters: Schema.Unknown,
-      execute(params: unknown, ctx: Tool.Context): Effect.Effect<Tool.ExecuteResult<Record<string, unknown>>> {
-        const p = params as McpSearchParams
+      parameters: Parameters,
+      execute(params: McpSearchParams, ctx: Tool.Context): Effect.Effect<Tool.ExecuteResult<Record<string, unknown>>> {
+        const p = params
         return Effect.gen(function* () {
           if (p.operation === "list") return yield* doList(mcp) as any
           if (p.operation === "search") return yield* doSearch(mcp, p.query) as any
