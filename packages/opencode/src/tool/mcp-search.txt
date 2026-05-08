@@ -1,13 +1,26 @@
-Search and call MCP server tools.
+Search and call MCP server tools on demand.
 
-Operations:
-- "list": List all MCP servers and their tools
-- "search": Find tools by server name
-- "describe": Get tool's parameter schema
-- "call": Execute a tool
+Parameters:
+- operation (required): "list" | "search" | "describe" | "call"
+- query (optional): search term for "search" operation
+- server (optional): MCP server name — required for "describe" and "call"
+- tool (optional): tool name — required for "describe" and "call"
+- args (optional): object with tool arguments — required for "call" when tool has parameters
 
-Usage notes:
-  - The "search" query matches against server names, tool names, and descriptions. If the server name matches, all tools from that server are returned. Otherwise, individual tools whose name or description matches are returned.
-  - You MUST call "describe" before "call" to check the tool's parameters.
-  - You SHOULD NOT call a tool without first checking its parameters.
-  - Examples: search "playwright" to find all playwright tools, search "screenshot" to find screenshot tools across servers, search "context7" to find documentation lookup tools.
+Workflow (ALWAYS follow this order):
+1. mcp_search(operation: "list")                                          — see all servers and tools
+2. mcp_search(operation: "search", query: "keyword")                      — narrow down by keyword
+3. mcp_search(operation: "describe", server: "myserver", tool: "my_tool") — get parameter schema
+4. mcp_search(operation: "call", server: "myserver", tool: "my_tool", args: {"param": "value"})
+
+Rules:
+- ALWAYS call "describe" before "call" to check required parameters.
+- "server" and "tool" parameters are REQUIRED for "describe" and "call".
+- "args" must be a JSON object (not a string), e.g. args: {"query": "effect-ts", "libraryName": "effect"}
+- Do NOT use "mcp_name", "tool_name", or "arguments" — the correct parameter names are "server", "tool", and "args".
+
+Examples:
+  List all: mcp_search(operation: "list")
+  Search:   mcp_search(operation: "search", query: "context7")
+  Describe: mcp_search(operation: "describe", server: "context7", tool: "resolve-library-id")
+  Call:     mcp_search(operation: "call", server: "context7", tool: "resolve-library-id", args: {"query": "effect-ts", "libraryName": "effect"})
