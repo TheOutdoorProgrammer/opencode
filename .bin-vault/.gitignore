@@ -1,0 +1,3 @@
+# Compiled binaries - too large for git
+opencode-*
+!opencode-mcp-lazy

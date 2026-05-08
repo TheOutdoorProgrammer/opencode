@@ -1,0 +1,31 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "logLevel": "DEBUG",
+  "shell": "/usr/bin/zsh",
+  "snapshot": false,
+  "share": "manual",
+  "autoupdate": false,
+  "model": "opencode/minimax-m2.5-free",
+  "small_model": "opencode/minimax-m2.5-free",
+  "plugin": [
+    "opencode-claude-auth@latest",
+    "opencode-antigravity-auth@latest",
+    "@paulp-o/opencode-auq@latest",
+    "@plannotator/opencode@latest",
+    "opencode-supermemory@latest",
+    "oh-my-openagent@latest"
+  ],
+  "experimental": {
+    "mcp_lazy": true
+  },
+  "mcp": {
+    "deepwiki": {
+      "type": "local",
+      "command": ["npx", "-y", "@deepwiki/mcp@latest"]
+    },
+    "context7": {
+      "type": "remote",
+      "url": "https://mcp.context7.com/mcp"
+    }
+  }
+}
